@@ -11,17 +11,17 @@ import Cocoa
 
 class ServerProfile: NSObject, NSCopying {
     
-    var uuid: String
+    @objc var uuid: String
 
-    var serverHost: String = ""
-    var serverPort: uint16 = 8379
-    var method:String = "aes-128-gcm"
-    var password:String = ""
-    var remark:String = ""
-    var ota: Bool = false // onetime authentication
+    @objc var serverHost: String = ""
+    @objc var serverPort: uint16 = 8379
+    @objc var method:String = "aes-128-gcm"
+    @objc var password:String = ""
+    @objc var remark:String = ""
+    @objc var ota: Bool = false // onetime authentication
     
-    var enabledKcptun: Bool = false
-    var kcptunProfile = KcptunProfile()
+    @objc var enabledKcptun: Bool = false
+    @objc var kcptunProfile = KcptunProfile()
     
     override init() {
         uuid = UUID().uuidString
@@ -47,8 +47,8 @@ class ServerProfile: NSObject, NSCopying {
         func decodeUrl(url: URL) -> String? {
             let urlStr = url.absoluteString
             let index = urlStr.index(urlStr.startIndex, offsetBy: 5)
-            let encodedStr = urlStr.substring(from: index)
-            guard let data = Data(base64Encoded: padBase64(string: encodedStr)) else {
+            let encodedStr = urlStr[index...]
+            guard let data = Data(base64Encoded: padBase64(string: String(encodedStr))) else {
                 return url.absoluteString
             }
             guard let decoded = String(data: data, encoding: String.Encoding.utf8) else {
@@ -203,7 +203,12 @@ class ServerProfile: NSObject, NSCopying {
     
     func toKcptunJsonConfig() -> [String: AnyObject] {
         var conf = kcptunProfile.toJsonConfig()
-        conf["remoteaddr"] = "\(serverHost):\(serverPort)" as AnyObject
+        if serverHost.contains(Character(":")) {
+            conf["remoteaddr"] = "[\(serverHost)]:\(serverPort)" as AnyObject
+        } else {
+            conf["remoteaddr"] = "\(serverHost):\(serverPort)" as AnyObject
+        }
+
         return conf
     }
 
@@ -316,4 +321,5 @@ class ServerProfile: NSObject, NSCopying {
             return "\(remark) (\(serverHost):\(serverPort))"
         }
     }
+    
 }
